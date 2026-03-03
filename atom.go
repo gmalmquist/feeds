@@ -61,6 +61,7 @@ type AtomLink struct {
 	//Atom 1.0 <link rel="enclosure" type="audio/mpeg" title="MP3" href="http://www.example.org/myaudiofile.mp3" length="1234" />
 	XMLName xml.Name `xml:"link"`
 	Href    string   `xml:"href,attr"`
+	Lang    string   `xml:"hreflang,attr,omitempty"`
 	Rel     string   `xml:"rel,attr,omitempty"`
 	Type    string   `xml:"type,attr,omitempty"`
 	Length  string   `xml:"length,attr,omitempty"`
@@ -152,7 +153,7 @@ func (a *Atom) AtomFeed() *AtomFeed {
 	feed := &AtomFeed{
 		Xmlns:    ns,
 		Title:    a.Title,
-		Link:     &AtomLink{Href: link.Href, Rel: link.Rel},
+		Link:     &AtomLink{Href: link.Href, Rel: link.Rel, Lang: a.Language},
 		Subtitle: a.Description,
 		Id:       link.Href,
 		Updated:  updated,
@@ -162,7 +163,12 @@ func (a *Atom) AtomFeed() *AtomFeed {
 		feed.Author = &AtomAuthor{AtomPerson: AtomPerson{Name: a.Author.Name, Email: a.Author.Email}}
 	}
 	for _, e := range a.Items {
-		feed.Entries = append(feed.Entries, newAtomEntry(e))
+		atomEntry := newAtomEntry(e)
+		for i, link := range atomEntry.Links {
+			link.Lang = a.Language
+			atomEntry.Links[i] = link
+		}
+		feed.Entries = append(feed.Entries, atomEntry)
 	}
 	return feed
 }
